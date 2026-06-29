@@ -12,7 +12,7 @@ const C = {
 const STYLES = `
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
   html { scroll-behavior: smooth; }
-  body { font-family: 'DM Sans', sans-serif; background: #faf8f4; color: #1a1a18; }
+  body { font-family: 'DM Sans', sans-serif; background: #faf8f4; color: #1a1a18; overflow-x: hidden; }
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-thumb { background: #2d6a4f; border-radius: 10px; }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -29,6 +29,28 @@ const STYLES = `
   .typing span { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #c9963a; animation: pulse 1.3s ease infinite; }
   .typing span:nth-child(2) { animation-delay: .2s; }
   .typing span:nth-child(3) { animation-delay: .4s; }
+
+  /* ── Mobile nav burger (hidden on desktop) ── */
+  .gt-burger { display: none; background: none; border: none; font-size: 24px; cursor: pointer; padding: 6px; color: #1a1a18; line-height: 1; }
+
+  /* ── Responsive breakpoint: tablets & phones ── */
+  @media (max-width: 768px) {
+    .gt-px { padding-left: 20px !important; padding-right: 20px !important; }
+    .gt-grid { grid-template-columns: 1fr !important; gap: 18px !important; }
+    .gt-grid-sm { grid-template-columns: repeat(2,1fr) !important; gap: 10px !important; }
+    .gt-hero-title { font-size: 42px !important; line-height: 1.12 !important; }
+    .gt-hero-sub { font-size: 16px !important; padding: 0 8px; }
+    .gt-page-h1 { font-size: 38px !important; line-height: 1.15 !important; }
+    .gt-search-box { flex-direction: column !important; padding: 6px !important; border-radius: 18px !important; }
+    .gt-search-field { border-right: none !important; border-bottom: 1px solid #ede8df !important; width: 100% !important; padding: 12px 14px !important; }
+    .gt-search-field:last-of-type { border-bottom: none !important; }
+    .gt-search-btn { width: 100% !important; margin: 4px 0 0 0 !important; border-radius: 12px !important; justify-content: center !important; }
+    .gt-stat-item { border-right: none !important; border-bottom: 1px solid rgba(255,255,255,.15) !important; padding: 16px 0 !important; }
+    .gt-stat-item:last-child { border-bottom: none !important; }
+    .gt-nav-links { display: none !important; }
+    .gt-burger { display: flex !important; align-items: center; justify-content: center; }
+    .gt-trust { gap: 14px !important; font-size: 11px !important; }
+  }
 `
 
 // ─── FALLBACK DATA (used if API fails or during dev) ─────────────────────────
@@ -116,27 +138,38 @@ function PackageCard({ pkg, onEnquire }) {
 // ─── NAVBAR ──────────────────────────────────────────────────────────────────
 function Nav({ page, setPage }) {
   const [scrolled, setScrolled] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50)
     window.addEventListener('scroll', onScroll)
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
   const links = [['home', 'Home'], ['packages', 'Packages'], ['stays', 'Stays'], ['b2b', 'For Agencies'], ['ai', 'AI Planner'], ['about', 'About']]
+  const go = (id) => { setPage(id); setMenuOpen(false) }
   return (
-    <nav style={{ position: 'sticky', top: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 52px', height: 70, background: scrolled ? 'rgba(250,248,244,.95)' : 'transparent', backdropFilter: scrolled ? 'blur(16px)' : 'none', borderBottom: scrolled ? `1px solid ${C.sand}` : '1px solid transparent', transition: 'all .35s' }}>
-      <div onClick={() => setPage('home')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 36, height: 36, background: C.green, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>🌿</div>
+    <nav className='gt-px' style={{ position: 'sticky', top: 0, zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 52px', height: 70, background: scrolled || menuOpen ? 'rgba(250,248,244,.97)' : 'transparent', backdropFilter: scrolled || menuOpen ? 'blur(16px)' : 'none', borderBottom: scrolled || menuOpen ? `1px solid ${C.sand}` : '1px solid transparent', transition: 'all .35s' }}>
+      <div onClick={() => go('home')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ width: 36, height: 36, background: C.green, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>🌿</div>
         <div>
           <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 20, color: C.green, fontWeight: 600 }}>GoEarth</div>
           <div style={{ fontSize: 9, letterSpacing: '.2em', color: C.gold, textTransform: 'uppercase' }}>TheGoEarth.com</div>
         </div>
       </div>
-      <div style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
+      <div className='gt-nav-links' style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
         {links.map(([id, label]) => (
-          <button key={id} onClick={() => setPage(id)} style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 13, fontWeight: 500, color: page === id ? C.green : C.muted, background: 'none', border: 'none', cursor: 'pointer', transition: 'color .2s', fontStyle: page === id ? 'normal' : 'normal', borderBottom: page === id ? `2px solid ${C.green}` : '2px solid transparent', paddingBottom: 2 }}>{label}</button>
+          <button key={id} onClick={() => go(id)} style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 13, fontWeight: 500, color: page === id ? C.green : C.muted, background: 'none', border: 'none', cursor: 'pointer', transition: 'color .2s', borderBottom: page === id ? `2px solid ${C.green}` : '2px solid transparent', paddingBottom: 2 }}>{label}</button>
         ))}
-        <Btn onClick={() => setPage('b2b')} style={{ padding: '9px 20px', fontSize: 12 }}>Partner With Us</Btn>
+        <Btn onClick={() => go('b2b')} style={{ padding: '9px 20px', fontSize: 12 }}>Partner With Us</Btn>
       </div>
+      <button className='gt-burger' aria-label='Menu' onClick={() => setMenuOpen(o => !o)}>{menuOpen ? '✕' : '☰'}</button>
+      {menuOpen && (
+        <div style={{ position: 'absolute', top: 70, left: 0, right: 0, background: C.white, borderBottom: `1px solid ${C.sand}`, boxShadow: '0 16px 32px rgba(0,0,0,.1)', display: 'flex', flexDirection: 'column', padding: '14px 20px 20px' }}>
+          {links.map(([id, label]) => (
+            <button key={id} onClick={() => go(id)} style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 15, fontWeight: 500, color: page === id ? C.green : C.text, background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: '13px 4px', borderBottom: `1px solid ${C.sand}` }}>{label}</button>
+          ))}
+          <Btn onClick={() => go('b2b')} style={{ marginTop: 14, justifyContent: 'center' }}>Partner With Us</Btn>
+        </div>
+      )}
     </nav>
   )
 }
@@ -157,36 +190,36 @@ function HomePage({ setPage }) {
   return (
     <div>
       {/* Hero */}
-      <section style={{
+      <section className='gt-px' style={{
         minHeight: '92vh', display: 'grid', placeItems: 'center', padding: '80px 52px',
         position: 'relative', overflow: 'hidden',
         backgroundImage: `linear-gradient(180deg, rgba(10,20,12,.35) 0%, rgba(8,16,10,.55) 55%, rgba(6,12,8,.85) 100%), url('https://images.unsplash.com/photo-1706269796410-6a11ee591b6e?auto=format&fit=crop&w=2400&q=80')`,
         backgroundSize: 'cover', backgroundPosition: 'center 60%',
       }}>
-        <div style={{ maxWidth: 800, textAlign: 'center', position: 'relative', zIndex: 1 }}>
+        <div style={{ maxWidth: 800, width: '100%', textAlign: 'center', position: 'relative', zIndex: 1 }}>
           <div className='au1' style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 16px', borderRadius: 100, background: 'rgba(255,255,255,.14)', backdropFilter: 'blur(6px)', fontSize: 12, fontWeight: 600, color: C.white, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 28, border: '1px solid rgba(255,255,255,.2)' }}>
             <span style={{ width: 6, height: 6, borderRadius: '50%', background: C.greenLight, animation: 'float 2s ease infinite', display: 'inline-block' }} /> Authentic Local Europe
           </div>
-          <h1 className='au2' style={{ fontFamily: "'Playfair Display',serif", fontSize: 76, fontWeight: 500, lineHeight: 1.04, letterSpacing: '-.02em', marginBottom: 20, color: C.white, textShadow: '0 4px 30px rgba(0,0,0,.35)' }}>
+          <h1 className='au2 gt-hero-title' style={{ fontFamily: "'Playfair Display',serif", fontSize: 76, fontWeight: 500, lineHeight: 1.04, letterSpacing: '-.02em', marginBottom: 20, color: C.white, textShadow: '0 4px 30px rgba(0,0,0,.35)' }}>
             Discover local <br /><em style={{ color: C.goldLight }}>Europe.</em>
           </h1>
-          <p className='au3' style={{ fontSize: 18, fontWeight: 300, color: 'rgba(255,255,255,.88)', lineHeight: 1.75, maxWidth: 500, margin: '0 auto 44px', textShadow: '0 2px 16px rgba(0,0,0,.3)' }}>
+          <p className='au3 gt-hero-sub' style={{ fontSize: 18, fontWeight: 300, color: 'rgba(255,255,255,.88)', lineHeight: 1.75, maxWidth: 500, margin: '0 auto 44px', textShadow: '0 2px 16px rgba(0,0,0,.3)' }}>
             Find authentic experiences, handpicked stays, and cultural adventures across rural Europe — curated for curious travellers.
           </p>
           {/* Search */}
-          <div className='au4' style={{ background: C.white, borderRadius: 28, boxShadow: '0 20px 60px rgba(0,0,0,.35)', padding: '8px 8px 8px 0', display: 'flex', alignItems: 'center', maxWidth: 680, margin: '0 auto' }}>
+          <div className='au4 gt-search-box' style={{ background: C.white, borderRadius: 28, boxShadow: '0 20px 60px rgba(0,0,0,.35)', padding: '8px 8px 8px 0', display: 'flex', alignItems: 'center', maxWidth: 680, margin: '0 auto' }}>
             {[['Where', 'Greece, Italy, Spain...', 'where'], ['When', 'Any time', 'when'], ['Travellers', '2 adults', 'who']].map(([label, placeholder, key], i) => (
-              <div key={key} style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '10px 20px', borderRight: i < 2 ? `1px solid ${C.sand}` : 'none' }}>
+              <div key={key} className='gt-search-field' style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '10px 20px', borderRight: i < 2 ? `1px solid ${C.sand}` : 'none' }}>
                 <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.12em', textTransform: 'uppercase', color: C.text, marginBottom: 3 }}>{label}</span>
                 <input value={search[key]} onChange={e => setSearch(p => ({ ...p, [key]: e.target.value }))} placeholder={placeholder} style={{ fontSize: 14, color: C.muted, background: 'none', border: 'none', width: '100%' }} />
               </div>
             ))}
-            <button onClick={() => setPage('packages')} style={{ padding: '14px 26px', background: C.green, color: C.white, borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', marginRight: 4, fontFamily: "'DM Sans',sans-serif", transition: 'background .2s' }}
+            <button className='gt-search-btn' onClick={() => setPage('packages')} style={{ padding: '14px 26px', background: C.green, color: C.white, borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap', marginRight: 4, fontFamily: "'DM Sans',sans-serif", transition: 'background .2s' }}
               onMouseEnter={e => e.currentTarget.style.background = '#0d2e1c'}
               onMouseLeave={e => e.currentTarget.style.background = C.green}>🔍 Search</button>
           </div>
           {/* Trust */}
-          <div className='au5' style={{ display: 'flex', justifyContent: 'center', gap: 36, marginTop: 32, flexWrap: 'wrap' }}>
+          <div className='au5 gt-trust' style={{ display: 'flex', justifyContent: 'center', gap: 36, marginTop: 32, flexWrap: 'wrap' }}>
             {['✓ Verified local hosts', '✓ 50+ unique experiences', '✓ Best price guarantee', '✓ 24/7 support'].map(t => (
               <span key={t} style={{ fontSize: 13, color: 'rgba(255,255,255,.85)', display: 'flex', alignItems: 'center', gap: 6, textShadow: '0 1px 8px rgba(0,0,0,.4)' }}>{t}</span>
             ))}
@@ -195,19 +228,19 @@ function HomePage({ setPage }) {
       </section>
 
       {/* Featured Packages */}
-      <section style={{ padding: '80px 52px', background: C.ivory }}>
+      <section className='gt-px' style={{ padding: '80px 52px', background: C.ivory }}>
         <div style={{ maxWidth: 1180, margin: '0 auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48, flexWrap: 'wrap', gap: 16 }}>
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: C.greenLight, marginBottom: 10 }}>Featured Journeys</div>
-              <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 44, fontWeight: 500, lineHeight: 1.1 }}>Where will you <em style={{ color: C.green }}>disappear?</em></h2>
+              <h2 className='gt-page-h1' style={{ fontFamily: "'Playfair Display',serif", fontSize: 44, fontWeight: 500, lineHeight: 1.1 }}>Where will you <em style={{ color: C.green }}>disappear?</em></h2>
             </div>
             <Btn variant='outline' onClick={() => setPage('packages')}>View all packages →</Btn>
           </div>
           {loading ? (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><Spinner /></div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 26 }}>
+            <div className='gt-grid' style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 26 }}>
               {packages.map(p => <PackageCard key={p.id} pkg={p} onEnquire={() => setPage('b2b')} />)}
             </div>
           )}
@@ -215,10 +248,10 @@ function HomePage({ setPage }) {
       </section>
 
       {/* Stats */}
-      <section style={{ padding: '72px 52px', background: C.green }}>
-        <div style={{ maxWidth: 1000, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 0 }}>
+      <section className='gt-px' style={{ padding: '72px 52px', background: C.green }}>
+        <div className='gt-grid' style={{ maxWidth: 1000, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 0 }}>
           {[['€460B', 'European tourism market'], ['20%', 'Choose rural experiences'], ['4–5%', 'Annual rural growth rate'], ['14M+', 'GCC & India visitors/yr']].map(([v, l]) => (
-            <div key={l} style={{ textAlign: 'center', padding: '0 20px', borderRight: `1px solid rgba(255,255,255,.15)` }}>
+            <div key={l} className='gt-stat-item' style={{ textAlign: 'center', padding: '0 20px', borderRight: `1px solid rgba(255,255,255,.15)` }}>
               <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 36, color: C.gold, fontWeight: 500 }}>{v}</div>
               <div style={{ fontSize: 13, color: 'rgba(255,255,255,.6)', marginTop: 6 }}>{l}</div>
             </div>
@@ -227,11 +260,11 @@ function HomePage({ setPage }) {
       </section>
 
       {/* B2B CTA */}
-      <section style={{ padding: '100px 52px', background: C.white, textAlign: 'center' }}>
+      <section className='gt-px' style={{ padding: '100px 52px', background: C.white, textAlign: 'center' }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.2em', textTransform: 'uppercase', color: C.greenLight, marginBottom: 16 }}>For Tour Agencies</div>
-        <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 52, fontWeight: 500, marginBottom: 18, lineHeight: 1.1 }}>Ready to offer your clients <em style={{ color: C.green }}>something unforgettable?</em></h2>
+        <h2 className='gt-page-h1' style={{ fontFamily: "'Playfair Display',serif", fontSize: 52, fontWeight: 500, marginBottom: 18, lineHeight: 1.1 }}>Ready to offer your clients <em style={{ color: C.green }}>something unforgettable?</em></h2>
         <p style={{ fontSize: 16, color: C.muted, maxWidth: 480, margin: '0 auto 44px', lineHeight: 1.75 }}>We partner with agencies in Dubai, Doha, Riyadh, Kochi, Bangalore, and New Delhi.</p>
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <Btn onClick={() => setPage('b2b')}>Become a Partner</Btn>
           <Btn variant='outline' onClick={() => setPage('packages')}>View Package Catalogue</Btn>
         </div>
@@ -258,10 +291,10 @@ function PackagesPage({ setPage }) {
 
   return (
     <div style={{ minHeight: '100vh', background: C.ivory }}>
-      <div style={{ padding: '72px 52px 52px', background: `linear-gradient(160deg,${C.green},#0d2e1c)` }}>
+      <div className='gt-px' style={{ padding: '72px 52px 52px', background: `linear-gradient(160deg,${C.green},#0d2e1c)` }}>
         <div style={{ maxWidth: 1180, margin: '0 auto' }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.2em', color: 'rgba(255,255,255,.5)', textTransform: 'uppercase', marginBottom: 14 }}>Our Journeys</div>
-          <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 68, fontWeight: 500, color: C.white, marginBottom: 44, lineHeight: 1.05 }}>Rural Europe, <em style={{ color: C.gold }}>curated.</em></h1>
+          <h1 className='gt-page-h1' style={{ fontFamily: "'Playfair Display',serif", fontSize: 68, fontWeight: 500, color: C.white, marginBottom: 44, lineHeight: 1.05 }}>Rural Europe, <em style={{ color: C.gold }}>curated.</em></h1>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {filters.map(([id, label]) => (
               <button key={id} onClick={() => setFilter(id)} style={{ padding: '9px 20px', borderRadius: 100, fontSize: 13, fontWeight: 500, border: '1px solid', cursor: 'pointer', transition: 'all .2s', fontFamily: "'DM Sans',sans-serif", background: filter === id ? C.gold : 'transparent', color: filter === id ? C.white : 'rgba(255,255,255,.6)', borderColor: filter === id ? C.gold : 'rgba(255,255,255,.2)' }}>{label}</button>
@@ -269,11 +302,11 @@ function PackagesPage({ setPage }) {
           </div>
         </div>
       </div>
-      <div style={{ padding: '52px 52px 80px', maxWidth: 1180, margin: '0 auto' }}>
+      <div className='gt-px' style={{ padding: '52px 52px 80px', maxWidth: 1180, margin: '0 auto' }}>
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}><Spinner /></div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 26 }}>
+          <div className='gt-grid' style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 26 }}>
             {packages.map(p => <PackageCard key={p.id} pkg={p} onEnquire={() => setPage('b2b')} />)}
           </div>
         )}
@@ -324,17 +357,17 @@ function StaysPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: C.ivory }}>
-      <div style={{ padding: '72px 52px 52px', background: `linear-gradient(160deg,${C.green},#0d2e1c)` }}>
+      <div className='gt-px' style={{ padding: '72px 52px 52px', background: `linear-gradient(160deg,${C.green},#0d2e1c)` }}>
         <div style={{ maxWidth: 1180, margin: '0 auto' }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.2em', color: 'rgba(255,255,255,.5)', textTransform: 'uppercase', marginBottom: 14 }}>Where To Sleep</div>
-          <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 64, fontWeight: 500, color: C.white, lineHeight: 1.08 }}>Handpicked <em style={{ color: C.gold }}>rural stays.</em></h1>
+          <h1 className='gt-page-h1' style={{ fontFamily: "'Playfair Display',serif", fontSize: 64, fontWeight: 500, color: C.white, lineHeight: 1.08 }}>Handpicked <em style={{ color: C.gold }}>rural stays.</em></h1>
         </div>
       </div>
-      <div style={{ padding: '52px 52px 80px', maxWidth: 1180, margin: '0 auto' }}>
+      <div className='gt-px' style={{ padding: '52px 52px 80px', maxWidth: 1180, margin: '0 auto' }}>
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}><Spinner /></div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 26 }}>
+          <div className='gt-grid' style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 26 }}>
             {stays.map(s => <StayCard key={s.id} stay={s} />)}
           </div>
         )}
@@ -386,18 +419,18 @@ function B2BPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: C.white }}>
-      <div style={{ padding: '72px 52px 72px', background: `linear-gradient(155deg,#e8f5ee,#d8f3dc)` }}>
+      <div className='gt-px' style={{ padding: '72px 52px 72px', background: `linear-gradient(155deg,#e8f5ee,#d8f3dc)` }}>
         <div style={{ maxWidth: 1180, margin: '0 auto' }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.2em', color: C.greenMid, textTransform: 'uppercase', marginBottom: 14 }}>B2B Partnership Portal</div>
-          <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 64, fontWeight: 500, lineHeight: 1.08, maxWidth: 700 }}>Grow your portfolio with <em style={{ color: C.green }}>rural Europe.</em></h1>
+          <h1 className='gt-page-h1' style={{ fontFamily: "'Playfair Display',serif", fontSize: 64, fontWeight: 500, lineHeight: 1.08, maxWidth: 700 }}>Grow your portfolio with <em style={{ color: C.green }}>rural Europe.</em></h1>
         </div>
       </div>
-      <div style={{ padding: '72px 52px 100px', maxWidth: 1180, margin: '0 auto' }}>
+      <div className='gt-px' style={{ padding: '72px 52px 100px', maxWidth: 1180, margin: '0 auto' }}>
         {/* Markets */}
         <div style={{ marginBottom: 72 }}>
           <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 36, marginBottom: 8 }}>Active Markets</h2>
           <p style={{ fontSize: 14, color: C.muted, marginBottom: 28 }}>Onboarding agencies from 6 cities across GCC and India.</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: 14 }}>
+          <div className='gt-grid-sm' style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: 14 }}>
             {MARKETS.map(([flag, city, country]) => (
               <div key={city} style={{ background: C.ivory, border: `1px solid ${C.sand}`, borderRadius: 12, padding: '20px 10px', textAlign: 'center' }}>
                 <div style={{ fontSize: 28, marginBottom: 8 }}>{flag}</div>
@@ -411,7 +444,7 @@ function B2BPage() {
         {/* Tiers */}
         <div style={{ marginBottom: 72 }}>
           <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 36, marginBottom: 28 }}>Partnership Tiers</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20 }}>
+          <div className='gt-grid' style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20 }}>
             {TIERS.map(t => (
               <div key={t.name} style={{ background: C.ivory, border: `${t.featured ? '2px' : '1px'} solid ${t.featured ? C.gold : C.sand}`, borderRadius: 14, padding: '36px 28px', position: 'relative' }}>
                 {t.featured && <div style={{ position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)', background: C.gold, color: C.white, padding: '4px 18px', fontSize: 10, fontWeight: 700, borderRadius: 100, whiteSpace: 'nowrap', letterSpacing: '.12em' }}>MOST POPULAR</div>}
@@ -496,7 +529,7 @@ function AIPage() {
 
   return (
     <div style={{ minHeight: '92vh', display: 'flex', flexDirection: 'column', background: C.ivory }}>
-      <div style={{ padding: '28px 52px 22px', borderBottom: `1px solid ${C.sand}`, background: C.white }}>
+      <div className='gt-px' style={{ padding: '28px 52px 22px', borderBottom: `1px solid ${C.sand}`, background: C.white }}>
         <div style={{ maxWidth: 820, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{ width: 48, height: 48, borderRadius: '50%', background: C.green, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>🌿</div>
           <div>
@@ -506,7 +539,7 @@ function AIPage() {
           <div style={{ marginLeft: 'auto', padding: '4px 14px', background: '#d8f3dc', borderRadius: 100, fontSize: 10, color: C.greenMid, fontWeight: 600 }}>● Online</div>
         </div>
       </div>
-      <div style={{ flex: 1, overflowY: 'auto', padding: '28px 52px' }}>
+      <div className='gt-px' style={{ flex: 1, overflowY: 'auto', padding: '28px 52px' }}>
         <div style={{ maxWidth: 820, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
           {messages.map((m, i) => (
             <div key={i} style={{ display: 'flex', flexDirection: m.role === 'user' ? 'row-reverse' : 'row', gap: 12, alignItems: 'flex-start' }}>
@@ -526,7 +559,7 @@ function AIPage() {
         </div>
       </div>
       {messages.length <= 1 && (
-        <div style={{ padding: '0 52px 12px' }}>
+        <div className='gt-px' style={{ padding: '0 52px 12px' }}>
           <div style={{ maxWidth: 820, margin: '0 auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {suggestions.map(s => (
               <button key={s} onClick={() => setInput(s)} style={{ padding: '7px 16px', background: C.white, border: `1px solid ${C.sand}`, borderRadius: 100, fontSize: 12, color: C.muted, cursor: 'pointer', transition: 'all .2s', fontFamily: "'DM Sans',sans-serif" }}>{s}</button>
@@ -534,7 +567,7 @@ function AIPage() {
           </div>
         </div>
       )}
-      <div style={{ padding: '14px 52px 24px', borderTop: `1px solid ${C.sand}`, background: C.white }}>
+      <div className='gt-px' style={{ padding: '14px 52px 24px', borderTop: `1px solid ${C.sand}`, background: C.white }}>
         <div style={{ maxWidth: 820, margin: '0 auto', display: 'flex', gap: 10 }}>
           <textarea value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }} placeholder='Tell me about your dream rural Europe journey...' rows={2} style={{ flex: 1, padding: '13px 16px', background: C.ivory, border: `1px solid ${C.sand}`, borderRadius: 10, color: C.text, fontSize: 14, lineHeight: 1.6, resize: 'none', fontFamily: "'DM Sans',sans-serif" }} />
           <button onClick={send} disabled={!input.trim() || loading} style={{ width: 48, alignSelf: 'flex-end', height: 48, background: input.trim() && !loading ? C.green : C.sand, border: 'none', borderRadius: 10, cursor: input.trim() && !loading ? 'pointer' : 'default', fontSize: 18, color: input.trim() && !loading ? C.white : C.muted, transition: 'all .2s' }}>→</button>
@@ -549,13 +582,13 @@ function AIPage() {
 function AboutPage() {
   return (
     <div style={{ minHeight: '100vh', background: C.white }}>
-      <div style={{ padding: '80px 52px 80px', background: `linear-gradient(160deg,#e8f5ee,#d8f3dc)`, textAlign: 'center' }}>
+      <div className='gt-px' style={{ padding: '80px 52px 80px', background: `linear-gradient(160deg,#e8f5ee,#d8f3dc)`, textAlign: 'center' }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.2em', color: C.greenMid, textTransform: 'uppercase', marginBottom: 16 }}>Our Story</div>
-        <h1 style={{ fontFamily: "'Playfair Display',serif", fontSize: 64, fontWeight: 500, maxWidth: 700, margin: '0 auto 20px', lineHeight: 1.08 }}>Closing the gap between travellers and <em style={{ color: C.green }}>truth.</em></h1>
+        <h1 className='gt-page-h1' style={{ fontFamily: "'Playfair Display',serif", fontSize: 64, fontWeight: 500, maxWidth: 700, margin: '0 auto 20px', lineHeight: 1.08 }}>Closing the gap between travellers and <em style={{ color: C.green }}>truth.</em></h1>
         <p style={{ fontSize: 16, color: C.muted, maxWidth: 560, margin: '0 auto', lineHeight: 1.8 }}>Green Tribe was born from a simple observation: travellers from the GCC and India were seeing Paris and Disneyland, but missing the truest face of Europe — its villages, its people, its land.</p>
       </div>
-      <div style={{ padding: '80px 52px', maxWidth: 1100, margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 72, alignItems: 'center', marginBottom: 80 }}>
+      <div className='gt-px' style={{ padding: '80px 52px', maxWidth: 1100, margin: '0 auto' }}>
+        <div className='gt-grid' style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 72, alignItems: 'center', marginBottom: 80 }}>
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.2em', color: C.greenLight, textTransform: 'uppercase', marginBottom: 14 }}>Our Mission</div>
             <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 40, marginBottom: 20, lineHeight: 1.2 }}>Economic growth through authentic experience</h2>
@@ -572,7 +605,7 @@ function AboutPage() {
           </div>
         </div>
         <h2 style={{ fontFamily: "'Playfair Display',serif", fontSize: 40, marginBottom: 40 }}>The team</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 20 }}>
+        <div className='gt-grid' style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 20 }}>
           {[['🌿', 'Founder & CEO', 'Jashim Konnengal', 'Rural tourism innovator bridging GCC, India, and rural Europe.'], ['📊', 'Communications', 'Open Position', 'Market research and stakeholder relations.'], ['🎬', 'Multimedia', 'Open Position', 'Photography, video, and digital storytelling.'], ['🇬🇷', 'Country Ambassador', 'Open Position — Greece', 'On-the-ground partnerships in our launch market.']].map(([emoji, role, name, desc]) => (
             <div key={role} style={{ background: C.ivory, border: `1px solid ${C.sand}`, borderRadius: 14, padding: '32px 22px' }}>
               <div style={{ fontSize: 36, marginBottom: 16 }}>{emoji}</div>
@@ -590,9 +623,9 @@ function AboutPage() {
 // ─── FOOTER ──────────────────────────────────────────────────────────────────
 function Footer({ setPage }) {
   return (
-    <footer style={{ background: C.text, color: C.white, padding: '64px 52px 36px' }}>
+    <footer className='gt-px' style={{ background: C.text, color: C.white, padding: '64px 52px 36px' }}>
       <div style={{ maxWidth: 1180, margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 52, marginBottom: 52 }}>
+        <div className='gt-grid' style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 52, marginBottom: 52 }}>
           <div>
             <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 22, marginBottom: 10 }}>🌿 GoEarth</div>
             <p style={{ fontSize: 14, color: 'rgba(255,255,255,.45)', lineHeight: 1.72, maxWidth: 260, marginBottom: 24 }}>Discover authentic local experiences, handpicked stays, and cultural adventures across rural Europe.</p>
@@ -604,7 +637,7 @@ function Footer({ setPage }) {
             </div>
           ))}
         </div>
-        <div style={{ borderTop: '1px solid rgba(255,255,255,.08)', paddingTop: 24, display: 'flex', justifyContent: 'space-between' }}>
+        <div style={{ borderTop: '1px solid rgba(255,255,255,.08)', paddingTop: 24, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <span style={{ fontSize: 13, color: 'rgba(255,255,255,.25)' }}>© 2024 TheGoEarth.com · Brussels, Belgium</span>
           <span style={{ fontSize: 13, color: 'rgba(255,255,255,.25)' }}>Dubai · Doha · Riyadh · Kochi · Bangalore · New Delhi</span>
         </div>
