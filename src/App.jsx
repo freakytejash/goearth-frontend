@@ -512,7 +512,7 @@ function HomePage({ setPage }) {
   return (
     <div>
       {booking && <BookingModal pkg={booking} onClose={() => setBooking(null)} />}
-      <section className='gt-px' style={{ minHeight:'92vh', display:'grid', placeItems:'center', padding:'80px 52px', position:'relative', overflow:'hidden', backgroundImage:`linear-gradient(180deg,rgba(10,20,12,.35) 0%,rgba(8,16,10,.55) 55%,rgba(6,12,8,.85) 100%),url('https://images.unsplash.com/photo-1706269796410-6a11ee591b6e?auto=format&fit=crop&w=2400&q=80')`, backgroundSize:'cover', backgroundPosition:'center 60%' }}>
+      <section className='gt-px' style={{ minHeight:'92vh', display:'grid', placeItems:'center', padding:'80px 52px', position:'relative', backgroundImage:`linear-gradient(180deg,rgba(10,20,12,.35) 0%,rgba(8,16,10,.55) 55%,rgba(6,12,8,.85) 100%),url('https://images.unsplash.com/photo-1706269796410-6a11ee591b6e?auto=format&fit=crop&w=2400&q=80')`, backgroundSize:'cover', backgroundPosition:'center 60%' }}>
         <div style={{ maxWidth:800, width:'100%', textAlign:'center', position:'relative', zIndex:1 }}>
           <div className='au1' style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'6px 16px', borderRadius:100, background:'rgba(255,255,255,.14)', backdropFilter:'blur(6px)', fontSize:12, fontWeight:600, color:C.white, letterSpacing:'.1em', textTransform:'uppercase', marginBottom:28, border:'1px solid rgba(255,255,255,.2)' }}>
             <span style={{ width:6, height:6, borderRadius:'50%', background:C.greenLight, animation:'float 2s ease infinite', display:'inline-block' }} /> Authentic Local Europe
@@ -523,7 +523,9 @@ function HomePage({ setPage }) {
           <p className='au3 gt-hero-sub' style={{ fontSize:18, fontWeight:300, color:'rgba(255,255,255,.88)', lineHeight:1.75, maxWidth:500, margin:'0 auto 44px', textShadow:'0 2px 16px rgba(0,0,0,.3)' }}>
             Find authentic experiences, handpicked stays, and cultural adventures across rural Europe — curated for curious travellers.
           </p>
-          <SearchBox onSearch={({ dest }) => setPage(dest?`packages?region=${dest.region}`:'packages')} />
+          <SearchBox onSearch={({ dest, dateRange, travellers }) => {
+            navigate({ page:'packages', region: dest?.region||null, dateRange, travellers })
+          }} />
           <div className='au5 gt-trust' style={{ display:'flex', justifyContent:'center', gap:36, marginTop:32, flexWrap:'wrap' }}>
             {['✓ Verified local hosts','✓ 50+ unique experiences','✓ Best price guarantee','✓ 24/7 support'].map(t => (
               <span key={t} style={{ fontSize:13, color:'rgba(255,255,255,.85)', display:'flex', alignItems:'center', gap:6, textShadow:'0 1px 8px rgba(0,0,0,.4)' }}>{t}</span>
@@ -616,18 +618,36 @@ function HomePage({ setPage }) {
 }
 
 // ── PACKAGES PAGE ─────────────────────────────────────────────────────────────
-function PackagesPage({ setPage }) {
+function PackagesPage({ setPage, initialRegion }) {
   const [packages, setPackages] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
+  const [regionFilter, setRegionFilter] = useState(initialRegion || 'all')
   const [booking, setBooking] = useState(null)
+
+  // If a new initialRegion is passed (from search), update the filter
+  useEffect(() => {
+    if (initialRegion) setRegionFilter(initialRegion)
+  }, [initialRegion])
 
   useEffect(() => {
     setLoading(true)
-    api.getPackages(filter).then(data => setPackages(Array.isArray(data)?data:FALLBACK_PACKAGES)).catch(() => setPackages(FALLBACK_PACKAGES)).finally(() => setLoading(false))
+    api.getPackages(filter)
+      .then(data => setPackages(Array.isArray(data) ? data : FALLBACK_PACKAGES))
+      .catch(() => setPackages(FALLBACK_PACKAGES))
+      .finally(() => setLoading(false))
   }, [filter])
 
-  const filters = [['all','All Journeys'],['cultural','🏛 Cultural'],['festival','🎭 Festival'],['luxury','✨ Luxury'],['nature','🌲 Nature'],['adventure','⛰ Adventure']]
+  const typeFilters = [['all','All Types'],['cultural','🏛 Cultural'],['festival','🎭 Festival'],['luxury','✨ Luxury'],['nature','🌲 Nature'],['adventure','⛰ Adventure']]
+  const regionFilters = [['all','All Destinations'],['Italy','🇮🇹 Italy'],['Spain','🇪🇸 Spain'],['Greece','🇬🇷 Greece'],['Portugal','🇵🇹 Portugal'],['France','🇫🇷 France'],['Slovenia','🇸🇮 Slovenia']]
+
+  const displayed = packages.filter(p => {
+    const typeOk = filter === 'all' || p.type === filter
+    const regionOk = regionFilter === 'all' || p.region === regionFilter
+    return typeOk && regionOk
+  })
+
+  const clearSearch = () => { setFilter('all'); setRegionFilter('all') }
 
   return (
     <div style={{ minHeight:'100vh', background:C.ivory }}>
@@ -635,19 +655,52 @@ function PackagesPage({ setPage }) {
       <div className='gt-px' style={{ padding:'72px 52px 52px', background:`linear-gradient(160deg,${C.green},#0d2e1c)` }}>
         <div style={{ maxWidth:1180, margin:'0 auto' }}>
           <div style={{ fontSize:11, fontWeight:700, letterSpacing:'.2em', color:'rgba(255,255,255,.5)', textTransform:'uppercase', marginBottom:14 }}>Our Journeys</div>
-          <h1 className='gt-page-h1' style={{ fontFamily:"'Playfair Display',serif", fontSize:68, fontWeight:500, color:C.white, marginBottom:44, lineHeight:1.05 }}>Rural Europe, <em style={{ color:C.gold }}>curated.</em></h1>
+          <h1 className='gt-page-h1' style={{ fontFamily:"'Playfair Display',serif", fontSize:68, fontWeight:500, color:C.white, marginBottom:32, lineHeight:1.05 }}>
+            {regionFilter !== 'all' ? `${regionFilter}, curated.` : <span>Rural Europe, <em style={{ color:C.gold }}>curated.</em></span>}
+          </h1>
+
+          {/* Destination filter pills */}
+          <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:12 }}>
+            {regionFilters.map(([id, label]) => (
+              <button key={id} onClick={() => setRegionFilter(id)} style={{ padding:'8px 18px', borderRadius:100, fontSize:12, fontWeight:500, border:'1px solid', cursor:'pointer', transition:'all .2s', fontFamily:"'DM Sans',sans-serif", background:regionFilter===id?C.white:'transparent', color:regionFilter===id?C.green:'rgba(255,255,255,.7)', borderColor:regionFilter===id?C.white:'rgba(255,255,255,.25)' }}>{label}</button>
+            ))}
+          </div>
+
+          {/* Type filter pills */}
           <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-            {filters.map(([id,label]) => (
-              <button key={id} onClick={() => setFilter(id)} style={{ padding:'9px 20px', borderRadius:100, fontSize:13, fontWeight:500, border:'1px solid', cursor:'pointer', transition:'all .2s', fontFamily:"'DM Sans',sans-serif", background:filter===id?C.gold:'transparent', color:filter===id?C.white:'rgba(255,255,255,.6)', borderColor:filter===id?C.gold:'rgba(255,255,255,.2)' }}>{label}</button>
+            {typeFilters.map(([id, label]) => (
+              <button key={id} onClick={() => setFilter(id)} style={{ padding:'8px 18px', borderRadius:100, fontSize:12, fontWeight:500, border:'1px solid', cursor:'pointer', transition:'all .2s', fontFamily:"'DM Sans',sans-serif", background:filter===id?C.gold:'transparent', color:filter===id?C.white:'rgba(255,255,255,.55)', borderColor:filter===id?C.gold:'rgba(255,255,255,.15)' }}>{label}</button>
             ))}
           </div>
         </div>
       </div>
-      <div className='gt-px' style={{ padding:'52px 52px 80px', maxWidth:1180, margin:'0 auto' }}>
-        {loading ? <div style={{ display:'flex', justifyContent:'center', padding:'80px 0' }}><Spinner /></div> : (
-          <div className='gt-grid' style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:26 }}>
-            {packages.map(p => <PackageCard key={p.id} pkg={p} onEnquire={() => setBooking(p)} />)}
+
+      <div className='gt-px' style={{ padding:'28px 52px 8px', maxWidth:1180, margin:'0 auto' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+          <div style={{ fontSize:14, color:C.muted }}>
+            {loading ? 'Loading...' : `${displayed.length} journey${displayed.length!==1?'s':''} found`}
+            {(regionFilter!=='all' || filter!=='all') && <span style={{ color:C.greenMid, fontWeight:500 }}> · filtered</span>}
           </div>
+          {(regionFilter!=='all' || filter!=='all') && (
+            <button onClick={clearSearch} style={{ fontSize:13, color:C.greenMid, background:C.greenPale, border:'none', borderRadius:100, padding:'6px 16px', cursor:'pointer', fontFamily:"'DM Sans',sans-serif", fontWeight:500 }}>✕ Clear filters</button>
+          )}
+        </div>
+      </div>
+
+      <div className='gt-px' style={{ padding:'20px 52px 80px', maxWidth:1180, margin:'0 auto' }}>
+        {loading ? <div style={{ display:'flex', justifyContent:'center', padding:'80px 0' }}><Spinner /></div> : (
+          displayed.length === 0 ? (
+            <div style={{ textAlign:'center', padding:'80px 0' }}>
+              <div style={{ fontSize:48, marginBottom:16 }}>🌍</div>
+              <h3 style={{ fontFamily:"'Playfair Display',serif", fontSize:28, marginBottom:12 }}>No journeys match this filter</h3>
+              <p style={{ fontSize:15, color:C.muted, marginBottom:24 }}>Try a different destination or type combination.</p>
+              <Btn onClick={clearSearch} variant='outline'>Clear all filters</Btn>
+            </div>
+          ) : (
+            <div className='gt-grid' style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:26 }}>
+              {displayed.map(p => <PackageCard key={p.id} pkg={p} onEnquire={() => setBooking(p)} />)}
+            </div>
+          )
         )}
       </div>
     </div>
@@ -1099,14 +1152,25 @@ function Footer({ setPage }) {
 // ── ROOT ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const [page, setPage] = useState('home')
-  const navigate = (p) => { setPage(p); window.scrollTo({ top:0, behavior:'smooth' }) }
+  const [searchState, setSearchState] = useState({ region: null })
+
+  const navigate = (target) => {
+    if (typeof target === 'string') {
+      setPage(target)
+    } else {
+      // target = { page, region, dateRange, travellers }
+      setSearchState({ region: target.region || null })
+      setPage(target.page || 'packages')
+    }
+    window.scrollTo({ top:0, behavior:'smooth' })
+  }
 
   return (
     <div style={{ fontFamily:"'DM Sans',sans-serif" }}>
       <style>{STYLES}</style>
       <Nav page={page} setPage={navigate} />
       {page==='home' && <HomePage setPage={navigate} />}
-      {page==='packages' && <PackagesPage setPage={navigate} />}
+      {page==='packages' && <PackagesPage setPage={navigate} initialRegion={searchState.region} />}
       {page==='stays' && <StaysPage />}
       {page==='b2b' && <B2BPage />}
       {page==='ai' && <AIPage />}
